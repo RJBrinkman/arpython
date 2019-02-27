@@ -38,4 +38,20 @@ def scan(net, interface, timeout=5):
         raise
 
 
-scan("192.168.56.0/24", "enp0s3")
+def get_interfaces():
+    interfaces = ()
+    for network, netmask, _, interface, address in scapy.config.conf.route.routes:
+
+        # Skip standard interfaces and invalid netmasks.
+        if network == 0 or interface == 'lo' or address == '127.0.0.1' or address == '0.0.0.0' or netmask <= 0 or netmask == 0xFFFFFFFF:
+            continue
+
+        # Format the net/ip
+        net = format_ip(network, netmask)
+        if net:
+            interfaces += (net, interface)
+
+    return interfaces
+
+
+# scan("192.168.56.0/24", "enp0s3")
