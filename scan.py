@@ -39,7 +39,7 @@ def scan(net, interface, timeout=5):
 
 
 def get_interfaces():
-    interfaces = ()
+    interfaces = []
     for network, netmask, _, interface, address in scapy.config.conf.route.routes:
 
         # Skip standard interfaces and invalid netmasks.
@@ -49,7 +49,7 @@ def get_interfaces():
         # Format the net/ip
         net = format_ip(network, netmask)
         if net:
-            interfaces += (net, interface)
+            interfaces += [net + ", " + interface]
 
     return interfaces
 
