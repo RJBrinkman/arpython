@@ -29,13 +29,18 @@ def format_ip(bytes_network, bytes_netmask):
 # Needs an net and interface as inputs (e.g. scan("192.168.56.0/24", "enp0s3") could work)
 def scan(net, interface, timeout=5):
     logger.info("Using scapy arping with %s on %s" % (net, interface))
+    found_ips = []
     try:
         ans, unans = scapy.all.arping(net, iface=interface, timeout=timeout, verbose=True)
         for s, r in ans:
             line = r.src + " " + r.psrc
+            ms = (r.src, r.psrc)
+            found_ips.append(ms)
             logger.info(line)
     except socket.error as e:
         raise
+
+    return found_ips
 
 
 def get_interfaces():
