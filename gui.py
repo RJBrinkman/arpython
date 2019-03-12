@@ -38,5 +38,8 @@ targets_combo.grid(column=0, row=4, sticky=W)
 # Event watcher for when something in the combobox is selected
 interface_combo.bind("<<ComboboxSelected>>", select_interface)
 
+
+
+
 # Run Gui
 window.mainloop()
