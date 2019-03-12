@@ -34,7 +34,7 @@ def scan(net, interface, timeout=5):
         ans, unans = scapy.all.arping(net, iface=interface, timeout=timeout, verbose=True)
         for s, r in ans:
             line = r.src + " " + r.psrc
-            ms = (r.src, r.psrc)
+            ms = [r.src, r.psrc]
             found_ips.append(ms)
             logger.info(line)
     except socket.error as e:
