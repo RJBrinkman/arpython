@@ -28,9 +28,14 @@ def select_interface(event="x"):
     s = s.split(', ')
     found_ips = scan.scan(net=s[0], interface=s[1])
     found_ips = [', '.join(i[::-1]) for i in found_ips]
+
+    router_combo['values'] = found_ips
+    router_combo.current(0)
+    router_combo['state'] = "normal"
+
     targets_combo['values'] = found_ips
     targets_combo.current(0)
-    targets_combo['state'] = 'normal'
+    targets_combo['state'] = "normal"
 
 
 # Add scan button
@@ -38,17 +43,21 @@ scan_button = t.Button(text="Scan for interfaces", command=select_interface)
 scan_button.grid(column=1, row=2, padx=p_x, stick=E)
 
 
+# Add label for Router
+label_router = t.Label(window, text="Choose the router")
+label_router.grid(column=0, row=3, stick=W, padx=p_x, pady=p_y)
+router_combo = t.Combobox(window, width=35, state="disabled")
+router_combo.grid(column=1, row=3, padx=p_x)
+
 # Add label for victims
 label_victim = t.Label(window, text="Choose your victim")
-label_victim.grid(column=0, row=3, stick=W, padx=p_x, pady=p_y)
+label_victim.grid(column=0, row=4, stick=W, padx=p_x, pady=p_y)
 targets_combo = t.Combobox(window, width=35, state="disabled")
-targets_combo.grid(column=1, row=3, padx=p_x)
+targets_combo.grid(column=1, row=4, padx=p_x)
 
 
 # Event watcher for when something in the combobox is selected
 interface_combo.bind("<<ComboboxSelected>>", select_interface)
-
-
 
 
 # Run Gui

