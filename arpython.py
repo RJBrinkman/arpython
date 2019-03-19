@@ -66,10 +66,11 @@ logger.addHandler(handler)
 def main():
     args = parser.parse_args()
     logger.setLevel(args.loglevel)
+    handler.setFormatter(formatter)
     handler.setLevel(args.loglevel)
     logger.addHandler(handler)
 
-    logger.debug('main')
+    logger.error('main')
 
     # If gui was specified we will launch te GUI otherwise the program will run from the command line
     if args.gui:
