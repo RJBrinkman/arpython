@@ -105,5 +105,5 @@ def arp_poison_stealthy(victim_ip, victim_mac, router_ip, router_mac):
     arp_spoof_stealth(victim_ip, victim_mac, router_ip, router_mac)
 
 
-#def dnsPoison():
-    #break
+def dnsPoison():
+    print("")
