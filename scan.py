@@ -3,14 +3,9 @@
 from scapy.all import *
 import socket
 import math
+import logging
 
-
-logger = logging.getLogger(__name__)
-handler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger()
 
 
 # Converts the byte formats that scapy returns to something we can read
@@ -35,9 +30,9 @@ def scan(net, interface, timeout=5):
     try:
         ans, unans = scapy.all.arping(net, iface=interface, timeout=timeout, verbose=True)
         for s, r in ans:
-            line = r.src + " " + r.psrc
             ms = [r.src, r.psrc]
             found_ips.append(ms)
+            line = r.src + " " + r.psrc
             logger.info(line)
     except socket.error as e:
         raise
