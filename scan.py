@@ -6,6 +6,7 @@ import math
 import logging
 
 logger = logging.getLogger()
+logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
 
 # Converts the byte formats that scapy returns to something we can read
@@ -28,7 +29,10 @@ def scan(net, interface, timeout=5):
 
     found_ips = []
     try:
+        # Scan and block scapy from printing a buch of stuff
+        sys.stdout = open(os.devnull, 'w')
         ans, unans = scapy.all.arping(net, iface=interface, timeout=timeout, verbose=True)
+        sys.stdout = sys.__stdout__
         for s, r in ans:
             ms = [r.src, r.psrc]
             found_ips.append(ms)
@@ -55,6 +59,16 @@ def get_interfaces():
             interfaces += [net + ", " + interface]
 
     return interfaces
+
+
+# Grabs the mac address of a local client
+def get_mac(source, dest):
+    sys.stdout = open(os.devnull, 'w')
+    mac = scapy.all.sr(scapy.all.ARP(op=1, psrc=source, pdst=dest))
+    sys.stdout = sys.__stdout__
+    for s, r in mac[0][ARP]:
+        logging.info(r.hwsrc)
+        return r.hwsrc
 
 
 # Normal way of doing ARP spoofing
