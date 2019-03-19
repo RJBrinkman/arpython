@@ -87,4 +87,5 @@ attack_button.grid(column=3, row=5, padx=p_x, pady=p_y)
 # interface_combo.bind("<<ComboboxSelected>>", select_interface)
 
 # Run Gui
-window.mainloop()
+def run():
+    window.mainloop()
