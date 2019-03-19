@@ -1,12 +1,13 @@
 #! /usr/bin/env python
+import logging
+logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
 from scapy.all import *
 import socket
 import math
-import logging
+
 
 logger = logging.getLogger()
-logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
 
 # Converts the byte formats that scapy returns to something we can read
