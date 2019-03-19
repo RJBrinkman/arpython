@@ -101,4 +101,4 @@ def arpPoisonStealthy(victimIP, victimMAC, routerIP, routerMAC):
 
 
 def dnsPoison():
-    break
+    print("")
