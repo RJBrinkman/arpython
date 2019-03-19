@@ -27,8 +27,10 @@ def format_ip(bytes_network, bytes_netmask):
 
 # Scans a given scapy net for active devices with the scapy arping method.
 # Needs an net and interface as inputs (e.g. scan("192.168.56.0/24", "enp0s3") could work)
+# Returns a nested list with IP addresses and the default gateway marked with string Default
 def scan(net, interface, timeout=5):
     logger.info("Using scapy arping with %s on %s" % (net, interface))
+
     found_ips = []
     try:
         ans, unans = scapy.all.arping(net, iface=interface, timeout=timeout, verbose=True)
@@ -43,6 +45,7 @@ def scan(net, interface, timeout=5):
     return found_ips
 
 
+# Method that grabs all the interfaces from the scapy config returns a list with strings
 def get_interfaces():
     interfaces = []
     for network, netmask, _, interface, address in scapy.config.conf.route.routes:
