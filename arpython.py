@@ -53,6 +53,12 @@ parser.add_argument('-gm',
                     help="Use this flag to specify the MAC address of the default gateway"
                     )
 
+parser.add_argument('-am',
+                    '--attackermac',
+                    help="Use this flag to specify the MAC address of the attacker if you "
+                         "want one different from your machine"
+                    )
+
 parser.add_argument('-s',
                     '--scan',
                     help="Scans which network interfaces are available and prints the information",
@@ -85,8 +91,11 @@ parser.add_argument('-v',
 
 logger = logging.getLogger()
 handler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
+file_handler = logging.FileHandler(r'./log.txt')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
 logger.addHandler(handler)
 
 
