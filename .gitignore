@@ -206,4 +206,7 @@ dmypy.json
 ### Python Patch ###
 .venv/
 
+
+### LOG.TEXT ###
+log.txt
 # End of https://www.gitignore.io/api/python,pycharm+all

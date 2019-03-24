@@ -170,6 +170,8 @@ st.grid(column=0, row=row_num, columnspan=4, padx=p_x, pady=(0, p_y), stick="EW"
 
 # Create textLogger
 text_handler = TextHandler(st)
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+text_handler.setFormatter(formatter)
 
 logger.addHandler(text_handler)
 

@@ -91,8 +91,11 @@ parser.add_argument('-v',
 
 logger = logging.getLogger()
 handler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
+file_handler = logging.FileHandler(r'./log.txt')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
 logger.addHandler(handler)
 
 
