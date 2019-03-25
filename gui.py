@@ -58,6 +58,10 @@ def select_interface(event="x"):
         targets_combo.insert(END, ip)
 
     attacker_entry['state'] = "normal"
+    packets_entry['state'] = "normal"
+
+    packets_entry.delete(0, END)
+    packets_entry.insert(0, '100')
 
     silent_button['state'] = "normal"
     attack_button['state'] = "normal"
@@ -68,19 +72,32 @@ def select_interface(event="x"):
 def poison(silent=False):
     router = router_combo.get()
     router = router.split(', ')
+    packets = packets_entry.get()
+    attacker = attacker_entry.get()
 
     target = targets_combo.curselection()
 
     for i in target:
         targets.append(targets_combo.get(i, i + 1)[0])
 
-    if len(targets) == 1:
+    if len(targets) == 0:
+        logger.warn("Please select at least one victim")
+    elif len(packets) == 0 or int(packets) < 0:
+        logger.warn("Please set at least one packet")
+    elif len(attacker) != 0 and not re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$", attacker.lower()):
+        logger.warn("The attacker MAC address is not of correct format")
+    elif len(targets) == 1:
         target = targets[0].split(', ')
 
+        if len(attacker) == 0:
+            attacker = None
+
         if silent:
-            scan.arp_poison_stealthy(router_ip=router[0], router_mac=router[1], victim_ip=target[0], victim_mac=target[1])
+            scan.arp_poison_stealthy(router_ip=router[0], victim_ip=target[0], victim_mac=target[1],
+                                     attacker_mac=attacker)
         else:
-            scan.arp_poison(router_ip=router[0], router_mac=router[1], victim_ip=target[0], victim_mac=target[1])
+            scan.arp_poison(router_ip=router[0], router_mac=router[1], victim_ip=target[0], victim_mac=target[1],
+                            attacker_mac=attacker, iterations=int(packets))
 
 
 # Restores the ARP poison
@@ -140,8 +157,16 @@ row_num += 1
 # Add label for Attacker
 label_attacker = t.Label(window, text="Set attacker MAC, leave blank for yourself")
 label_attacker.grid(column=0, columnspan=2, row=row_num, stick=W, padx=p_x, pady=p_y)
-attacker_entry = t.Entry(window, width=37, state="disabled")
+attacker_entry = t.Entry(window, width=37, state="disabled", exportselection=0)
 attacker_entry.grid(column=2, columnspan=2, row=row_num, padx=p_x)
+
+row_num += 1
+
+# Add label for Attacker
+label_packets = t.Label(window, text="Set amount of packets to send")
+label_packets.grid(column=0, columnspan=2, row=row_num, stick=W, padx=p_x, pady=p_y)
+packets_entry = t.Entry(window, width=37, state="disabled", exportselection=0, textvariable=StringVar)
+packets_entry.grid(column=2, columnspan=2, row=row_num, padx=p_x)
 
 row_num += 1
 
@@ -177,6 +202,7 @@ logger.addHandler(text_handler)
 
 # Event watcher for when something in the combobox is selected
 # interface_combo.bind("<<ComboboxSelected>>", select_interface)
+
 
 # Run Gui
 def run():

