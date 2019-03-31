@@ -33,7 +33,7 @@ parser.add_argument('-g',
 parser.add_argument('-a',
                     '--arp',
                     help="Launches an ARP spoofing attack against a victim chose from silent (s) or normal (n)",
-                    choices=['s', 'silent', 'n', 'normal']
+                    choices=['s', 'silent', 'n', 'normal', 'r', 'restore']
                     )
 
 parser.add_argument('-p',
@@ -167,6 +167,13 @@ def main():
 
             threads_started(len(args.victim))
             sys.exit(1)
+        elif args.arp == 'restore' or args.arp == 'r':
+            args = check_arp(args)
+            logging.info("Starting ARP Restore")
+            for i in range(len(args.victim)):
+                restore_thread = threading.Thread(target=scan.arp_restore, args=(args.victim[i], args.victimmac[i],
+                                                                                 args.gateway, args.gatewaymac))
+                restore_thread.start()
         elif args.scaniface:
             # Grab the IP's and MAC addresses
             logger.info("Matching the interface")
@@ -204,6 +211,8 @@ def check_arp(args):
         logger.warn("Please make sure the amount of specified packets is larger than 0")
     elif args.packets is None:
         args.packets = 100
+    else:
+        args.packets = int(args.packets)
 
     if args.victimmac is None:
         logging.info("Grabbing the victims MAC address(es) since nothing was specified")

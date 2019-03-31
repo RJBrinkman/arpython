@@ -138,6 +138,7 @@ def arp_poison(victim_ip, victim_mac, router_ip, router_mac, attacker_mac, itera
             time.sleep(2)
 
     logger.info("Done spoofing")
+    arp_restore(victim_ip, victim_mac, router_ip, router_mac)
     sys.exit(1)
 
 
