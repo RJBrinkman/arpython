@@ -157,7 +157,7 @@ def start_dns():
 
 
 def stop_dns():
-    scan.set_queue('dns_stop')
+    scan.set_queue('dns_stop', d=True)
 
 
 # Make the basic TKinter gui

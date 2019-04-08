@@ -130,7 +130,7 @@ def threads_started(victims):
             try:
                 msg = scan.get_queue()
                 if msg == 'Done':
-                    sys.exit(1)
+                    sys.exit(0)
                 else:
                     scan.set_queue(msg)
             except Queue.Empty:
@@ -167,11 +167,11 @@ def main():
                                                                                         args.victimmac[i], args.gateway,
                                                                                         args.attackermac))
                 poison_thread.start()
-
-            threads_started(len(args.victim))
             if args.dns is not None:
                 dns_spoof(args)
-            sys.exit(1)
+
+            threads_started(len(args.victim))
+            sys.exit(0)
         elif args.arp == 'normal' or args.arp == 'n':
             args = check_arp(args)
             logging.info("Starting ARP Poison")
@@ -180,14 +180,14 @@ def main():
                                                                                args.gateway, args.gatewaymac,
                                                                                args.attackermac, args.packets))
                 poison_thread.start()
-
-            threads_started(len(args.victim))
             if args.dns is not None:
                 dns_spoof(args)
-            sys.exit(1)
+
+            threads_started(len(args.victim))
+            sys.exit(0)
         elif args.dns:
             dns_spoof(args)
-            sys.exit(1)
+            sys.exit(0)
         elif args.arp == 'restore' or args.arp == 'r':
             args = check_arp(args)
             logging.info("Starting ARP Restore")
@@ -207,7 +207,7 @@ def main():
             else:
                 logger.warn("Cannot find one interface that matches, you can use the -s or --scan "
                             "flag to list interfaces")
-                sys.exit(1)
+                sys.exit(0)
 
 
 # Uses socket to check if an IP is valid
@@ -224,7 +224,7 @@ def check_arp(args):
     if args.victim is None or args.gateway is None:
         logger.warn("For the ARP Poisoning to work at least the --victim and --gateway flags should be set. "
                     "The mac flags are optional.")
-        sys.exit(1)
+        sys.exit(0)
 
     if "," in args.victim:
         args.victim.replace(" ", "")
@@ -235,7 +235,7 @@ def check_arp(args):
     if args.attackermac is not None and not re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$",
                                                      args.attackermac):
         logger.warn("Attacker MAC address is not a proper MAC address")
-        sys.exit(1)
+        sys.exit(0)
 
     if args.packets is not None and int(args.packets) < 0:
         logger.warn("Please make sure the amount of specified packets is larger than 0")
@@ -265,6 +265,7 @@ def check_arp(args):
 
 
 def dns_spoof(args):
+    time.sleep(2)
     if args.dnsip and not valid_ip(args.dnsip):
         logging.warn("Please make sure the supplied IP address is valid")
 
@@ -276,6 +277,6 @@ def dns_spoof(args):
 
 if len(sys.argv) == 1:
     parser.print_help(sys.stderr)
-    sys.exit(1)
+    sys.exit(0)
 elif __name__ == '__main__':
     main()
