@@ -37,8 +37,6 @@ row_num = 0
 targets = []
 logger = logging.getLogger()
 
-interface = ""
-
 
 # Uses socket to check if an IP is valid
 def valid_ip(address):
@@ -146,11 +144,14 @@ def stop():
 def start_dns():
     target = dns_entry.get()
     spoof_all = target == ""
+    s = interface_combo.get()
+    s = s.split(', ')
 
     if target != "" and not valid_ip(target):
-        logger.warn("The specified IP address is not corr")
+        logger.warn("The specified IP address is not correct")
     else:
-        dns_thread = threading.Thread(target=scan.dns_spoofing, args=(interface, target, spoof_all))
+        stop_dns_button['state'] = "normal"
+        dns_thread = threading.Thread(target=scan.dns_spoofing, args=(s[1], target, spoof_all))
 
         dns_thread.start()
 
