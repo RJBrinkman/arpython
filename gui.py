@@ -5,6 +5,7 @@ import ttk as t
 import scan
 import logging
 import ScrolledText
+import socket
 
 
 class TextHandler(logging.Handler):
@@ -36,6 +37,17 @@ row_num = 0
 targets = []
 logger = logging.getLogger()
 
+interface = ""
+
+
+# Uses socket to check if an IP is valid
+def valid_ip(address):
+    try:
+        socket.inet_aton(address)
+        return True
+    except:
+        return False
+
 
 # Method for selecting the interface and then grabbing all devices active on that interface
 def select_interface(event="x"):
@@ -45,6 +57,8 @@ def select_interface(event="x"):
     # Grab the IP's and MAC addresses
     found_ips = scan.scan(net=s[0], interface=s[1])
     found_ips = [', '.join(i[::-1]) for i in found_ips]
+
+    interface = s[1]
 
     # Set the found IP's, MAC addresses and make buttons available
     router_combo['values'] = found_ips
@@ -94,6 +108,9 @@ def poison(silent=False):
         for target in targets:
             target = target.split(', ')
 
+            dns_entry['state'] = "normal"
+            dns_button['state'] = "normal"
+
             if silent:
                 poison_thread = threading.Thread(target=scan.arp_poison_stealthy, args=(target[0], target[1], router[0],
                                                                                         attacker))
@@ -113,12 +130,31 @@ def restore():
     if len(targets) == 1:
         target = targets[0].split(', ')
 
+        dns_entry['state'] = "disabled"
+        dns_button['state'] = "disabled"
+
         scan.arp_restore(router_ip=router[0], router_mac=router[1], victim_ip=target[0], victim_mac=target[1])
 
 
 def stop():
     for i in targets:
         scan.set_queue('stop')
+
+
+def start_dns():
+    target = dns_entry.get()
+    spoof_all = target == ""
+
+    if target != "" and not valid_ip(target):
+        logger.warn("The attacker MAC address is not of correct format")
+    else:
+        dns_thread = threading.Thread(target=scan.dns_spoofing, args=(interface, target, spoof_all))
+
+        dns_thread.start()
+
+
+def stop_dns():
+    scan.set_queue('stop')
 
 
 # Make the basic TKinter gui
@@ -181,7 +217,7 @@ packets_entry.grid(column=2, columnspan=2, row=row_num, padx=p_x)
 row_num += 1
 
 # Add stop button
-stop_button = t.Button(window, text="Stop spoofing", state=DISABLED, command=stop)
+stop_button = t.Button(window, text="Stop ARP spoofing", state=DISABLED, command=stop)
 stop_button.grid(column=0, row=row_num, padx=p_x, pady=p_y, stick="EW")
 
 # Add restore button
@@ -196,6 +232,20 @@ attack_button = t.Button(window, text="ARP Poison target", state=DISABLED, comma
 attack_button.grid(column=3, row=row_num, padx=p_x, pady=p_y, stick="EW")
 
 row_num += 1
+
+# Add DNS spoofing input
+label_dns = t.Label(window, text="IP to spoof (leave blank to spoof all IP's)")
+label_dns.grid(column=0, columnspan=2, row=row_num, stick=W, padx=p_x, pady=p_y)
+dns_entry = t.Entry(window, width=37, state="disabled", exportselection=0)
+dns_entry.grid(column=2, columnspan=2, row=row_num, padx=p_x)
+
+row_num += 1
+
+stop_dns_button = t.Button(window, text="Stop DNS spoofing", state=DISABLED, command=lambda: stop_dns(silent=True))
+stop_dns_button.grid(column=2, row=row_num, padx=p_x, pady=p_y, stick="EW")
+
+dns_button = t.Button(window, text="DNS Spoof target", state=DISABLED, command=lambda: start_dns())
+dns_button.grid(column=3, row=row_num, padx=p_x, pady=p_y, stick="EW")
 
 # Add text widget to display logging info
 st_label = t.Label(window, text="Logging info")

