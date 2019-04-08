@@ -148,7 +148,7 @@ def start_dns():
     spoof_all = target == ""
 
     if target != "" and not valid_ip(target):
-        logger.warn("The attacker MAC address is not of correct format")
+        logger.warn("The specified IP address is not corr")
     else:
         dns_thread = threading.Thread(target=scan.dns_spoofing, args=(interface, target, spoof_all))
 

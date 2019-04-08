@@ -5,6 +5,7 @@ import sys
 import threading
 import Queue
 import time
+import socket
 
 import scan
 
@@ -39,8 +40,14 @@ parser.add_argument('-a',
 parser.add_argument('-d',
                     '--dns',
                     help="Launches a DNS spoofing attack against a victim, only works if and ARP spoofing attack has "
-                         "already been executed. Can be executed together with an ARP poison attack. You can specify a "
-                         "single IP as target, leave empty to target everything"
+                         "already been executed. Can be executed together with an ARP poison attack. Use the -di flag "
+                         "to specify a specific target if not specified everything will be spoofed. Also make sure to "
+                         "set the correct interface as argument for this flag"
+                    )
+
+parser.add_argument('-di',
+                    '--dnsip',
+                    help="Use this flag to specify the IP address of the specific website you want to spoof"
                     )
 
 parser.add_argument('-p',
@@ -162,6 +169,8 @@ def main():
                 poison_thread.start()
 
             threads_started(len(args.victim))
+            if args.dns is not None:
+                dns_spoof(args)
             sys.exit(1)
         elif args.arp == 'normal' or args.arp == 'n':
             args = check_arp(args)
@@ -173,6 +182,11 @@ def main():
                 poison_thread.start()
 
             threads_started(len(args.victim))
+            if args.dns is not None:
+                dns_spoof(args)
+            sys.exit(1)
+        elif args.dns:
+            dns_spoof(args)
             sys.exit(1)
         elif args.arp == 'restore' or args.arp == 'r':
             args = check_arp(args)
@@ -194,6 +208,15 @@ def main():
                 logger.warn("Cannot find one interface that matches, you can use the -s or --scan "
                             "flag to list interfaces")
                 sys.exit(1)
+
+
+# Uses socket to check if an IP is valid
+def valid_ip(address):
+    try:
+        socket.inet_aton(address)
+        return True
+    except:
+        return False
 
 
 # Checks if the arp argument is valid
@@ -239,6 +262,16 @@ def check_arp(args):
     victims = len(args.victim)
 
     return args
+
+
+def dns_spoof(args):
+    if args.dnsip and not valid_ip(args.dnsip):
+        logging.warn("Please make sure the supplied IP address is valid")
+
+    spoof_all = args.dnsip is None
+    dns_thread = threading.Thread(target=scan.dns_spoofing, args=(args.dns, args.dnsip, spoof_all))
+
+    dns_thread.start()
 
 
 if len(sys.argv) == 1:
