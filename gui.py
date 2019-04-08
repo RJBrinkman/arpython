@@ -127,13 +127,13 @@ def restore():
     router = router_combo.get()
     router = router.split(', ')
 
-    if len(targets) == 1:
-        target = targets[0].split(', ')
-
-        dns_entry['state'] = "disabled"
-        dns_button['state'] = "disabled"
+    for target in targets:
+        target = target.split(', ')
 
         scan.arp_restore(router_ip=router[0], router_mac=router[1], victim_ip=target[0], victim_mac=target[1])
+
+    dns_entry['state'] = "disabled"
+    dns_button['state'] = "disabled"
 
 
 def stop():
