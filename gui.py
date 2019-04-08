@@ -77,7 +77,6 @@ def select_interface(event="x"):
     packets_entry.delete(0, END)
     packets_entry.insert(0, '100')
 
-    stop_button['state'] = "normal"
     silent_button['state'] = "normal"
     attack_button['state'] = "normal"
     restore_button['state'] = "normal"
@@ -110,6 +109,9 @@ def poison(silent=False):
 
             dns_entry['state'] = "normal"
             dns_button['state'] = "normal"
+            stop_button['state'] = "normal"
+
+            scan.clear_queue()
 
             if silent:
                 poison_thread = threading.Thread(target=scan.arp_poison_stealthy, args=(target[0], target[1], router[0],
@@ -154,7 +156,7 @@ def start_dns():
 
 
 def stop_dns():
-    scan.set_queue('stop')
+    scan.set_queue('dns_stop')
 
 
 # Make the basic TKinter gui
@@ -241,7 +243,7 @@ dns_entry.grid(column=2, columnspan=2, row=row_num, padx=p_x)
 
 row_num += 1
 
-stop_dns_button = t.Button(window, text="Stop DNS spoofing", state=DISABLED, command=lambda: stop_dns(silent=True))
+stop_dns_button = t.Button(window, text="Stop DNS spoofing", state=DISABLED, command=lambda: stop_dns())
 stop_dns_button.grid(column=2, row=row_num, padx=p_x, pady=p_y, stick="EW")
 
 dns_button = t.Button(window, text="DNS Spoof target", state=DISABLED, command=lambda: start_dns())

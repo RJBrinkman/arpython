@@ -36,6 +36,13 @@ parser.add_argument('-a',
                     choices=['s', 'silent', 'n', 'normal', 'r', 'restore']
                     )
 
+parser.add_argument('-d',
+                    '--dns',
+                    help="Launches a DNS spoofing attack against a victim, only works if and ARP spoofing attack has "
+                         "already been executed. Can be executed together with an ARP poison attack. You can specify a "
+                         "single IP as target, leave empty to target everything"
+                    )
+
 parser.add_argument('-p',
                     '--packets',
                     help="Specify a custom amount of packets for normal ARP attack, standard amount is 100",
@@ -81,7 +88,7 @@ parser.add_argument('-si',
                          "Just specifying the IP address is enough"
                     )
 
-parser.add_argument('-d',
+parser.add_argument('-db',
                     '--debug',
                     help="Set the logging to debug mode",
                     action="store_const",
@@ -90,7 +97,7 @@ parser.add_argument('-d',
                     default=logging.INFO
                     )
 
-parser.add_argument('-v',
+parser.add_argument('-vb',
                     '--verbose',
                     help="Set the logging to verbose mode",
                     action="store_const",
