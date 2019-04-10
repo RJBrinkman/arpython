@@ -50,7 +50,7 @@ When the tool is busy it can at any point be interrupted by using `CTRL + C`. Al
 
 Some examples to show usage
 
-#####Doing a scan, scan interface and then normal ARP poisoning attack with 5 packets
+##### Doing a scan, scan interface and then normal ARP poisoning attack with 5 packets
 
 ```buildoutcfg
 sudo python arpython.py -s
@@ -92,7 +92,7 @@ sudo python arpython.py -a r -vi 192.168.56.100 -gt 192.168.56.1
 2019-03-31 23:05:54,758 - INFO - Restoration successful
 ```
 
-#####ARP spoofing two targets and also applying DNS spoofing
+##### ARP spoofing two targets and also applying DNS spoofing
 ```buildoutcfg
 sudo python arpython.py -a n -vi "192.168.56.101,192.168.56.102" -gt 192.168.56.1 -d enp0s3
 2019-04-08 16:11:48,385 - INFO - Grabbing the victims MAC address(es) since nothing was specified
